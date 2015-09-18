@@ -1,5 +1,6 @@
 require 'restclient'
 require 'rack'
+require 'logger'
 
 module RestClient
   module Rack
@@ -12,6 +13,7 @@ module RestClient
         status, header, body = @app.call(env)
         net_http_response = RestClient::MockNetHTTPResponse.new(body, status, header)
         content = ""
+        log_response(status, header) if body.nil?
         net_http_response.body.each{|line| content << line}
         response = case RestClient::Response.method(:create).arity
         when 4 then RestClient::Response.create(content, net_http_response, {}, self)
@@ -25,6 +27,13 @@ module RestClient
         else
           response
         end
+      end
+
+      private
+
+      def log_response(status, header)
+        logger = Logger.new(STDOUT)
+        logger.error("[UnknownError] Status: #{status} - header: #{header}")
       end
     end
   end
